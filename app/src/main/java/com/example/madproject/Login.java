@@ -1,6 +1,5 @@
 package com.example.madproject;
 
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -13,14 +12,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.textfield.TextInputEditText;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -87,6 +82,7 @@ public class Login extends AppCompatActivity {
                         if (user != null && user.isEmailVerified()) {
                             progressBar.setVisibility(View.GONE);
                             MovetoHome();
+                            finish();
                         } else {
                             progressBar.setVisibility(View.GONE);
                             Toast.makeText(Login.this, "Please verify your email first", Toast.LENGTH_SHORT).show();

@@ -62,7 +62,7 @@ public class Home extends AppCompatActivity {
                         .setQuery(reference, model_catagories.class)
                         .build();
 
-        adapter = new CatagoriesAdapter(options);
+        adapter = new CatagoriesAdapter(options,this);
         rvCategories.setAdapter(adapter);
     }
 

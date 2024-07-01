@@ -1,5 +1,7 @@
 package com.example.madproject;
 
+import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,17 +17,27 @@ import com.firebase.ui.database.FirebaseRecyclerOptions;
 
 public class CatagoriesAdapter extends FirebaseRecyclerAdapter<model_catagories, CatagoriesAdapter.adapterViewHolder> {
 
-    public CatagoriesAdapter(@NonNull FirebaseRecyclerOptions<model_catagories> options) {
+    private Context context;
+
+    public CatagoriesAdapter(@NonNull FirebaseRecyclerOptions<model_catagories> options, Context context) {
         super(options);
+        this.context = context;
     }
 
     @Override
     protected void onBindViewHolder(@NonNull adapterViewHolder holder, int position, @NonNull model_catagories modelCatagories) {
+        String key = getRef(position).getKey();
         holder.tvcatagories.setText(modelCatagories.getCategory());
 
         Glide.with(holder.ivphoto.getContext())
                 .load(modelCatagories.getImageUrl())
                 .into(holder.ivphoto);
+
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(context, dishes_home.class);
+            intent.putExtra("key", key);
+            context.startActivity(intent);
+        });
     }
 
     @NonNull
