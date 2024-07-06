@@ -2,15 +2,16 @@ package com.example.madproject;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.view.WindowManager;
 import android.widget.Button;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.firebase.ui.database.FirebaseRecyclerOptions;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
@@ -21,11 +22,10 @@ import java.util.Objects;
 public class Home extends AppCompatActivity {
 
     RecyclerView rvCategories;
-
     DatabaseReference reference;
     Button btnsignout;
     CatagoriesAdapter adapter;
-
+    FloatingActionButton fabCart;
     FirebaseUser user;
     FirebaseAuth mAuth;
 
@@ -36,11 +36,9 @@ public class Home extends AppCompatActivity {
         setContentView(R.layout.activity_home);
 
         init();
-        btnsignout.setOnClickListener(v->{
-            mAuth.signOut();
-            startActivity(new Intent(Home.this,MainActivity.class));
+        fabCart.setOnClickListener(v->{
+            startActivity(new Intent(Home.this,CartItems.class));
         });
-
 
         loadCategories();
     }
@@ -49,11 +47,12 @@ public class Home extends AppCompatActivity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
         Objects.requireNonNull(getSupportActionBar()).hide();
-        btnsignout=findViewById(R.id.btnsignout);
         rvCategories = findViewById(R.id.rvCatagories);
-        mAuth=FirebaseAuth.getInstance();
-        user=mAuth.getCurrentUser();
-        rvCategories.setLayoutManager(new GridLayoutManager(this,2));
+        mAuth = FirebaseAuth.getInstance();
+        user = mAuth.getCurrentUser();
+
+        fabCart=findViewById(R.id.fabCart);
+        rvCategories.setLayoutManager(new WrapContentGridLayoutManager(this, 2));
 
         reference = FirebaseDatabase.getInstance().getReference().child("categories");
 
@@ -62,7 +61,7 @@ public class Home extends AppCompatActivity {
                         .setQuery(reference, model_catagories.class)
                         .build();
 
-        adapter = new CatagoriesAdapter(options,this);
+        adapter = new CatagoriesAdapter(options, this);
         rvCategories.setAdapter(adapter);
     }
 
@@ -80,5 +79,29 @@ public class Home extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         adapter.stopListening();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        adapter.stopListening();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        // Save the RecyclerView state
+        Parcelable listState = rvCategories.getLayoutManager().onSaveInstanceState();
+        outState.putParcelable("recycler_state", listState);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        // Restore the RecyclerView state
+        if (savedInstanceState != null) {
+            Parcelable listState = savedInstanceState.getParcelable("recycler_state");
+            rvCategories.getLayoutManager().onRestoreInstanceState(listState);
+        }
     }
 }

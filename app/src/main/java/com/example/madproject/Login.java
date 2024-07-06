@@ -82,7 +82,6 @@ public class Login extends AppCompatActivity {
                         if (user != null && user.isEmailVerified()) {
                             progressBar.setVisibility(View.GONE);
                             MovetoHome();
-                            finish();
                         } else {
                             progressBar.setVisibility(View.GONE);
                             Toast.makeText(Login.this, "Please verify your email first", Toast.LENGTH_SHORT).show();
