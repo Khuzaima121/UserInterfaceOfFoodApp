@@ -55,59 +55,89 @@ public class CartItems extends AppCompatActivity {
         });
         init();
         btnBuyNow.setOnClickListener(v -> {
-            buynow();
-            AlertDialog.Builder add = new AlertDialog.Builder(CartItems.this);
-            add.setTitle("Confirm Order");
-            View view = LayoutInflater.from(CartItems.this)
-                    .inflate(R.layout.buy_now_layout, null, false);
-            EditText etUsername = view.findViewById(R.id.etUsername);
-            EditText etPhone = view.findViewById(R.id.etPhone);
-            EditText etAddress = view.findViewById(R.id.etAddress);
-            add.setView(view);
-            add.setPositiveButton("Purchase now", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    String name = etUsername.getText().toString().trim();
-                    String phone = etPhone.getText().toString().trim();
-                    String address = etAddress.getText().toString().trim();
-                    String price = Integer.toString(totalPrice);
-                    HashMap<String, Object> data = new HashMap<>();
-                    data.put("Address", address);
-                    data.put("DishName", dishesName.toString());
-                    data.put("TotalBill", price);
-                    data.put("UserName", name);
-                    data.put("UserPhone", phone);
-
-                    FirebaseDatabase.getInstance().getReference().child("Orders").push()
-                            .setValue(data)
-                            .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                @Override
-                                public void onSuccess(Void unused) {
-                                    Toast.makeText(CartItems.this, "Order placed successfully", Toast.LENGTH_SHORT).show();
-                                }
-                            }).addOnFailureListener(new OnFailureListener() {
-                                @Override
-                                public void onFailure(@NonNull Exception e) {
-                                    Toast.makeText(CartItems.this, e.getMessage(), Toast.LENGTH_SHORT).show();
-                                }
-                            });
-
-                }
-            });
-            add.show();
+            checkCartAndProceed();
         });
     }
 
+    private void checkCartAndProceed() {
+        reference.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (!snapshot.exists()) {
+                    Toast.makeText(CartItems.this, "Cart is empty", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                buynow();
+                showOrderDialog();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Toast.makeText(CartItems.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void showOrderDialog() {
+        AlertDialog.Builder add = new AlertDialog.Builder(CartItems.this);
+        add.setTitle("Confirm Order");
+        View view = LayoutInflater.from(CartItems.this)
+                .inflate(R.layout.buy_now_layout, null, false);
+        EditText etUsername = view.findViewById(R.id.etUsername);
+        EditText etPhone = view.findViewById(R.id.etPhone);
+        EditText etAddress = view.findViewById(R.id.etAddress);
+        add.setView(view);
+        add.setPositiveButton("Purchase now", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String name = etUsername.getText().toString().trim();
+                String phone = etPhone.getText().toString().trim();
+                String address = etAddress.getText().toString().trim();
+                if (name.isEmpty() || phone.isEmpty() || address.isEmpty()) {
+                    Toast.makeText(CartItems.this, "All fields are required", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                placeOrder(name, phone, address);
+            }
+        });
+        add.show();
+    }
+
+    private void placeOrder(String name, String phone, String address) {
+        String price = Integer.toString(totalPrice);
+        HashMap<String, Object> data = new HashMap<>();
+        data.put("Address", address);
+        data.put("DishName", dishesName.toString());
+        data.put("TotalBill", price);
+        data.put("UserName", name);
+        data.put("UserPhone", phone);
+
+        FirebaseDatabase.getInstance().getReference().child("Orders").child(user.getUid()).push()
+                .setValue(data)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void unused) {
+                        Toast.makeText(CartItems.this, "Order placed successfully", Toast.LENGTH_SHORT).show();
+                        reference.removeValue();
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Toast.makeText(CartItems.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
     private void buynow() {
-        reference.addValueEventListener(new ValueEventListener() {
+        reference.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 totalPrice = 0;
-                dishesName.setLength(0); // Clear the StringBuilder
+                dishesName.setLength(0);
                 for (DataSnapshot ds : snapshot.getChildren()) {
                     model_cart cartItems = ds.getValue(model_cart.class);
                     if (cartItems != null) {
-                        totalPrice = totalPrice + Integer.parseInt(cartItems.getPrice()) * Integer.parseInt(cartItems.getQuantity());
+                        totalPrice += Integer.parseInt(cartItems.getPrice()) * Integer.parseInt(cartItems.getQuantity());
                         dishesName.append(cartItems.getDishName()).append(",");
                     }
                 }
@@ -119,7 +149,7 @@ public class CartItems extends AppCompatActivity {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-
+                Toast.makeText(CartItems.this, error.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }
